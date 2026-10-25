@@ -1,0 +1,198 @@
+
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AI Trading Assistant</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#0b1120;color:#e5edf8;font-family:Arial,sans-serif}
+header{padding:22px 16px;background:#121d32;border-bottom:1px solid #293852}
+h1{margin:0;font-size:23px;color:#63d6b4}
+header p{margin:8px 0 0;color:#a8b8ce;font-size:13px}
+main{max-width:760px;margin:auto;padding:16px}
+.card{background:#121d32;border:1px solid #293852;border-radius:14px;padding:17px;margin-bottom:15px}
+h2{font-size:17px;margin:0 0 16px}
+label{display:block;color:#afc0d5;font-size:13px;margin:12px 0 6px}
+input,select{width:100%;padding:12px;background:#0b1120;border:1px solid #354764;border-radius:8px;color:#fff;font-size:15px}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+button{width:100%;padding:14px;border:0;border-radius:9px;background:#32c99b;color:#06251c;font-weight:bold;font-size:16px;margin-top:15px}
+.result{line-height:1.8;white-space:pre-wrap;overflow-wrap:anywhere}
+.small{font-size:12px;color:#9cafc7;line-height:1.7}
+.tag{display:inline-block;padding:5px 9px;border-radius:6px;background:#20364a;color:#75e4c1;font-size:12px}
+footer{text-align:center;padding:15px;color:#8294ad;font-size:12px}
+@media(max-width:420px){.row{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<header>
+  <h1>AI Trading Assistant</h1>
+  <p>个人外汇与黄金交易分析 · 风险控制优先</p>
+  <span class="tag">个人版 1.0 · 手动分析</span>
+</header>
+
+<main>
+<section class="card">
+<h2>① 市场分析输入</h2>
+<label>交易品种</label>
+<select id="symbol">
+<option value="EUR/USD">EUR/USD 欧元/美元</option>
+<option value="USD/JPY">USD/JPY 美元/日元</option>
+<option value="XAU/USD">XAU/USD 黄金</option>
+</select>
+
+<div class="row">
+<div>
+<label>当前价格（手动填写）</label>
+<input id="price" type="number" step="any" placeholder="输入当前价格">
+</div>
+<div>
+<label>分析周期</label>
+<select id="tf">
+<option>H4</option><option>D1</option><option>H1</option><option>M15</option>
+</select>
+</div>
+</div>
+
+<label>市场趋势</label>
+<select id="trend">
+<option value="up">上涨趋势</option>
+<option value="down">下跌趋势</option>
+<option value="range">震荡行情</option>
+<option value="unknown">暂不确定</option>
+</select>
+
+<label>价格结构 / 观察内容（可选）</label>
+<input id="notes" placeholder="例如：回踩支撑、突破前高、流动性扫荡">
+
+<button onclick="analyze()">生成交易分析</button>
+</section>
+
+<section class="card">
+<h2>② 分析结果</h2>
+<div id="analysis" class="result">填写行情信息后，点击“生成交易分析”。</div>
+</section>
+
+<section class="card">
+<h2>③ 仓位与风险计算器</h2>
+<div class="row">
+<div>
+<label>账户资金（美元）</label>
+<input id="balance" type="number" value="1000" min="0">
+</div>
+<div>
+<label>单笔风险（%）</label>
+<input id="risk" type="number" value="1" min="0.1" max="1" step="0.1">
+</div>
+</div>
+<div class="row">
+<div>
+<label>入场价格</label>
+<input id="entry" type="number" step="any" placeholder="入场价">
+</div>
+<div>
+<label>止损价格</label>
+<input id="stop" type="number" step="any" placeholder="止损价">
+</div>
+</div>
+<label>止盈价格（可选）</label>
+<input id="target" type="number" step="any" placeholder="止盈价">
+<button onclick="calculateRisk()">计算风险</button>
+<div id="riskResult" class="result" style="margin-top:12px">等待输入。</div>
+<p class="small">本计算器先计算账户风险金额、止损距离及盈亏比，不直接给出手数。外汇与黄金合约规格因经纪商而异，确认合约大小、点值和账户货币后再计算手数。</p>
+</section>
+
+<section class="card">
+<h2>④ 交易纪律</h2>
+<p class="small">
+• 每笔交易风险不超过账户资金的 1%。<br>
+• 趋势不明确时，优先等待。<br>
+• 入场前先确定止损，不因亏损随意加仓。<br>
+• 重要经济数据公布前后注意波动和滑点。<br>
+• 本网页目前不连接实时行情，不调用外部 AI，也不自动下单。
+</p>
+</section>
+</main>
+
+<footer>AI Trading Assistant · 风险管理工具，不构成投资建议</footer>
+
+<script>
+function fmt(n){
+  return Number.isFinite(n) ? n.toLocaleString("en-US",{maximumFractionDigits:6}) : "—";
+}
+
+function analyze(){
+  const symbol=document.getElementById("symbol").value;
+  const price=Number(document.getElementById("price").value);
+  const tf=document.getElementById("tf").value;
+  const trend=document.getElementById("trend").value;
+  const notes=document.getElementById("notes").value.trim();
+  let direction="等待，不急于入场";
+  let reason="趋势尚不明确。先标记支撑、阻力，等待确认。";
+
+  if(trend==="up"){
+    direction="偏向寻找做多机会";
+    reason="观察回踩支撑后的止跌确认；避免在急涨后追价。";
+  }else if(trend==="down"){
+    direction="偏向寻找做空机会";
+    reason="观察反弹阻力后的转弱确认；避免在急跌后追空。";
+  }else if(trend==="range"){
+    direction="震荡行情，等待边界确认";
+    reason="关注区间高低点。没有明确突破或反转信号时不入场。";
+  }
+
+  let output="交易品种："+symbol+"\n周期："+tf+
+    "\n当前价格："+(price>0?fmt(price):"未填写")+
+    "\n初步倾向："+direction+
+    "\n\n观察建议："+reason+
+    "\n\n入场条件：等待价格结构与方向一致，再确认止损位置。"+
+    "\n止损：放在交易逻辑失效的位置。"+
+    "\n止盈：先确认目标位，再检查盈亏比是否合理。"+
+    "\n\n补充观察："+(notes||"未填写")+
+    "\n\n注意：这是根据你手动选择的趋势生成的规则提示，不是实时 AI 行情预测。";
+  document.getElementById("analysis").textContent=output;
+}
+
+function calculateRisk(){
+  const balance=Number(document.getElementById("balance").value);
+  const risk=Number(document.getElementById("risk").value);
+  const entry=Number(document.getElementById("entry").value);
+  const stop=Number(document.getElementById("stop").value);
+  const targetText=document.getElementById("target").value.trim();
+  const target=Number(targetText);
+  const out=document.getElementById("riskResult");
+
+  if(!(balance>0) || !(risk>0) || risk>1){
+    out.textContent="请填写有效账户资金，并将单笔风险设为 0 至 1% 之间。";
+    return;
+  }
+  if(!(entry>0) || !(stop>0) || entry===stop){
+    out.textContent="请填写有效入场价和止损价，且两者不能相同。";
+    return;
+  }
+
+  const riskMoney=balance*risk/100;
+  const distance=Math.abs(entry-stop);
+  let result="账户资金：$"+fmt(balance)+
+    "\n单笔风险上限："+risk+"%"+
+    "\n最大计划亏损：$"+fmt(riskMoney)+
+    "\n入场与止损距离："+fmt(distance);
+
+  if(targetText && target>0){
+    const reward=Math.abs(target-entry);
+    const correctDirection=(entry>stop && target>entry)||(entry<stop && target<entry);
+    const rr=reward/distance;
+    result+="\n目标价格："+fmt(target)+
+      "\n预估盈亏比：1:"+fmt(rr)+
+      "\n方向检查："+(correctDirection?"止盈方向合理":"请检查止盈是否位于预期盈利方向");
+  }else{
+    result+="\n尚未填写止盈价，无法计算盈亏比。";
+  }
+
+  result+="\n\n注意：这是价格距离和风险金额计算，不是手数计算。实际亏损还可能受点差、手续费和滑点影响。";
+  out.textContent=result;
+}
+</script>
+</body>
+</html>
