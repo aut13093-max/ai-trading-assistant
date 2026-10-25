@@ -10,188 +10,213 @@
 body{margin:0;background:#0b1120;color:#e5edf8;font-family:Arial,sans-serif}
 header{padding:22px 16px;background:#121d32;border-bottom:1px solid #293852}
 h1{margin:0;font-size:23px;color:#63d6b4}
-header p{margin:8px 0 0;color:#a8b8ce;font-size:13px}
+header p{color:#a8b8ce;font-size:13px}
 main{max-width:760px;margin:auto;padding:16px}
 .card{background:#121d32;border:1px solid #293852;border-radius:14px;padding:17px;margin-bottom:15px}
 h2{font-size:17px;margin:0 0 16px}
 label{display:block;color:#afc0d5;font-size:13px;margin:12px 0 6px}
 input,select{width:100%;padding:12px;background:#0b1120;border:1px solid #354764;border-radius:8px;color:#fff;font-size:15px}
-.row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-button{width:100%;padding:14px;border:0;border-radius:9px;background:#32c99b;color:#06251c;font-weight:bold;font-size:16px;margin-top:15px}
-.result{line-height:1.8;white-space:pre-wrap;overflow-wrap:anywhere}
-.small{font-size:12px;color:#9cafc7;line-height:1.7}
-.tag{display:inline-block;padding:5px 9px;border-radius:6px;background:#20364a;color:#75e4c1;font-size:12px}
-footer{text-align:center;padding:15px;color:#8294ad;font-size:12px}
-@media(max-width:420px){.row{grid-template-columns:1fr}}
+button{width:100%;padding:13px;border:0;border-radius:9px;background:#32c99b;color:#06251c;font-weight:bold;font-size:15px;margin-top:12px}
+button.secondary{background:#263750;color:#e5edf8}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.price{font-size:28px;font-weight:bold;color:#63d6b4;margin:10px 0}
+.small{font-size:12px;color:#9eb0c8;line-height:1.6}
+.result{white-space:pre-wrap;line-height:1.8;font-size:14px}
+.status{font-size:13px;color:#9eb0c8}
+.good{color:#63d6b4}
+.warn{color:#ffcb78}
+@media(max-width:480px){.grid{grid-template-columns:1fr}main{padding:10px}}
 </style>
 </head>
 <body>
 <header>
-  <h1>AI Trading Assistant</h1>
-  <p>个人外汇与黄金交易分析 · 风险控制优先</p>
-  <span class="tag">个人版 1.0 · 手动分析</span>
+<h1>AI Trading Assistant</h1>
+<p>外汇与黄金行情 · 规则分析 · 风险管理</p>
 </header>
-
 <main>
 <section class="card">
-<h2>① 市场分析输入</h2>
-<label>交易品种</label>
+<h2>实时行情</h2>
+<label for="symbol">交易品种</label>
 <select id="symbol">
-<option value="EUR/USD">EUR/USD 欧元/美元</option>
-<option value="USD/JPY">USD/JPY 美元/日元</option>
-<option value="XAU/USD">XAU/USD 黄金</option>
+<option value="EUR/USD">EUR/USD</option>
+<option value="USD/JPY">USD/JPY</option>
+<option value="XAU/USD">XAU/USD</option>
 </select>
+<div class="price" id="priceDisplay">等待获取行情</div>
+<div class="status" id="marketStatus">尚未获取价格</div>
+<button id="fetchBtn" onclick="loadPrice()">获取最新价格</button>
+<p class="small">行情由你已配置的 Twelve Data API 提供。数据是否可用取决于服务商权限与额度。</p>
+</section>
 
-<div class="row">
-<div>
-<label>当前价格（手动填写）</label>
-<input id="price" type="number" step="any" placeholder="输入当前价格">
-</div>
-<div>
-<label>分析周期</label>
-<select id="tf">
-<option>H4</option><option>D1</option><option>H1</option><option>M15</option>
-</select>
-</div>
-</div>
-
-<label>市场趋势</label>
+<section class="card">
+<h2>交易分析</h2>
+<label for="trend">你观察到的市场方向</label>
 <select id="trend">
 <option value="up">上涨趋势</option>
 <option value="down">下跌趋势</option>
-<option value="range">震荡行情</option>
-<option value="unknown">暂不确定</option>
+<option value="sideways">横盘震荡</option>
 </select>
-
-<label>价格结构 / 观察内容（可选）</label>
-<input id="notes" placeholder="例如：回踩支撑、突破前高、流动性扫荡">
-
-<button onclick="analyze()">生成交易分析</button>
+<label for="structure">市场结构</label>
+<select id="structure">
+<option value="pullback">趋势回调</option>
+<option value="breakout">突破关键位</option>
+<option value="range">区间内运行</option>
+<option value="unclear">结构不清晰</option>
+</select>
+<button onclick="analyze()">生成规则分析</button>
+<div id="analysisResult" class="result" style="margin-top:14px">选择市场方向与结构，然后生成分析。</div>
+<p class="small">此功能是规则分析，不是已连接的 AI 模型，也不保证交易结果。</p>
 </section>
 
 <section class="card">
-<h2>② 分析结果</h2>
-<div id="analysis" class="result">填写行情信息后，点击“生成交易分析”。</div>
+<h2>风险计算器</h2>
+<div class="grid">
+<div>
+<label for="account">账户资金（USD）</label>
+<input id="account" type="number" value="1000" min="0">
+</div>
+<div>
+<label for="risk">单笔风险（%）</label>
+<input id="risk" type="number" value="1" min="0.1" max="100" step="0.1">
+</div>
+<div>
+<label for="entry">入场价格</label>
+<input id="entry" type="number" step="any" placeholder="输入入场价格">
+</div>
+<div>
+<label for="stop">止损价格</label>
+<input id="stop" type="number" step="any" placeholder="输入止损价格">
+</div>
+<div>
+<label for="target">止盈价格</label>
+<input id="target" type="number" step="any" placeholder="输入止盈价格">
+</div>
+</div>
+<button onclick="calculateRisk()">计算风险与盈亏比</button>
+<div id="riskResult" class="result" style="margin-top:14px">填写价格后计算。</div>
+<p class="small">此计算器估算金额风险和盈亏比，不会自动计算所有品种的实际手数。外汇与黄金合约规格因经纪商而异。</p>
 </section>
 
 <section class="card">
-<h2>③ 仓位与风险计算器</h2>
-<div class="row">
-<div>
-<label>账户资金（美元）</label>
-<input id="balance" type="number" value="1000" min="0">
-</div>
-<div>
-<label>单笔风险（%）</label>
-<input id="risk" type="number" value="1" min="0.1" max="1" step="0.1">
-</div>
-</div>
-<div class="row">
-<div>
-<label>入场价格</label>
-<input id="entry" type="number" step="any" placeholder="入场价">
-</div>
-<div>
-<label>止损价格</label>
-<input id="stop" type="number" step="any" placeholder="止损价">
-</div>
-</div>
-<label>止盈价格（可选）</label>
-<input id="target" type="number" step="any" placeholder="止盈价">
-<button onclick="calculateRisk()">计算风险</button>
-<div id="riskResult" class="result" style="margin-top:12px">等待输入。</div>
-<p class="small">本计算器先计算账户风险金额、止损距离及盈亏比，不直接给出手数。外汇与黄金合约规格因经纪商而异，确认合约大小、点值和账户货币后再计算手数。</p>
-</section>
-
-<section class="card">
-<h2>④ 交易纪律</h2>
-<p class="small">
-• 每笔交易风险不超过账户资金的 1%。<br>
-• 趋势不明确时，优先等待。<br>
-• 入场前先确定止损，不因亏损随意加仓。<br>
-• 重要经济数据公布前后注意波动和滑点。<br>
-• 本网页目前不连接实时行情，不调用外部 AI，也不自动下单。
-</p>
+<h2>安全说明</h2>
+<p class="small">本网站目前不连接实盘自动下单。行情接口成功不代表分析功能已接入真实 AI。交易前请核对经纪商报价、点差、合约规格与风险。</p>
 </section>
 </main>
-
-<footer>AI Trading Assistant · 风险管理工具，不构成投资建议</footer>
-
 <script>
-function fmt(n){
-  return Number.isFinite(n) ? n.toLocaleString("en-US",{maximumFractionDigits:6}) : "—";
+let latestPrice = null;
+
+async function loadPrice(){
+  const symbol = document.getElementById("symbol").value;
+  const status = document.getElementById("marketStatus");
+  const display = document.getElementById("priceDisplay");
+  const btn = document.getElementById("fetchBtn");
+
+  btn.disabled = true;
+  btn.textContent = "正在获取...";
+  status.textContent = "正在连接行情接口...";
+
+  try{
+    const response = await fetch("/api/market?symbol=" + encodeURIComponent(symbol));
+    const data = await response.json();
+
+    if(!response.ok || typeof data.price !== "number"){
+      throw new Error(data.error || "行情暂时不可用");
+    }
+
+    latestPrice = data.price;
+    display.textContent = data.price.toLocaleString("en-US", {
+      maximumFractionDigits: 5
+    });
+    document.getElementById("entry").value = data.price;
+    status.textContent = "来源：" + data.source + " · 更新时间：" +
+      new Date(data.timestamp).toLocaleString();
+    status.className = "status good";
+  }catch(error){
+    status.textContent = "获取失败：" + error.message;
+    status.className = "status warn";
+  }finally{
+    btn.disabled = false;
+    btn.textContent = "获取最新价格";
+  }
 }
 
 function analyze(){
-  const symbol=document.getElementById("symbol").value;
-  const price=Number(document.getElementById("price").value);
-  const tf=document.getElementById("tf").value;
-  const trend=document.getElementById("trend").value;
-  const notes=document.getElementById("notes").value.trim();
-  let direction="等待，不急于入场";
-  let reason="趋势尚不明确。先标记支撑、阻力，等待确认。";
+  const trend = document.getElementById("trend").value;
+  const structure = document.getElementById("structure").value;
+  const symbol = document.getElementById("symbol").value;
+  const priceText = latestPrice === null ? "尚未获取实时价格" : latestPrice;
+  let direction = "";
+  let plan = "";
 
-  if(trend==="up"){
-    direction="偏向寻找做多机会";
-    reason="观察回踩支撑后的止跌确认；避免在急涨后追价。";
-  }else if(trend==="down"){
-    direction="偏向寻找做空机会";
-    reason="观察反弹阻力后的转弱确认；避免在急跌后追空。";
-  }else if(trend==="range"){
-    direction="震荡行情，等待边界确认";
-    reason="关注区间高低点。没有明确突破或反转信号时不入场。";
+  if(trend === "up"){
+    direction = "当前选择：上涨趋势";
+    plan = structure === "pullback"
+      ? "观察回调是否在支撑区域止跌，并等待确认信号。"
+      : structure === "breakout"
+      ? "确认突破是否有效，避免只凭单根 K 线追价。"
+      : structure === "range"
+      ? "趋势与横盘环境可能冲突，等待价格选择方向。"
+      : "结构不清晰，暂时观望，等待更明确的信号。";
+  }else if(trend === "down"){
+    direction = "当前选择：下跌趋势";
+    plan = structure === "pullback"
+      ? "观察反弹至阻力区域后是否出现转弱确认。"
+      : structure === "breakout"
+      ? "确认向下突破是否有效，警惕假突破。"
+      : structure === "range"
+      ? "下跌趋势与横盘环境可能冲突，等待方向确认。"
+      : "结构不清晰，暂时观望，等待更明确的信号。";
+  }else{
+    direction = "当前选择：横盘震荡";
+    plan = structure === "range"
+      ? "观察区间上下沿反应，避免在区间中部追单。"
+      : "方向与横盘状态不完全一致，等待突破并确认。";
   }
 
-  let output="交易品种："+symbol+"\n周期："+tf+
-    "\n当前价格："+(price>0?fmt(price):"未填写")+
-    "\n初步倾向："+direction+
-    "\n\n观察建议："+reason+
-    "\n\n入场条件：等待价格结构与方向一致，再确认止损位置。"+
-    "\n止损：放在交易逻辑失效的位置。"+
-    "\n止盈：先确认目标位，再检查盈亏比是否合理。"+
-    "\n\n补充观察："+(notes||"未填写")+
-    "\n\n注意：这是根据你手动选择的趋势生成的规则提示，不是实时 AI 行情预测。";
-  document.getElementById("analysis").textContent=output;
+  document.getElementById("analysisResult").textContent =
+    "品种：" + symbol + "\n" +
+    "最新获取价格：" + priceText + "\n" +
+    direction + "\n\n" +
+    "规则提示：\n" + plan + "\n\n" +
+    "风险控制：先确定止损位置，再按账户风险计算仓位。单笔风险应符合你的交易计划。";
 }
 
 function calculateRisk(){
-  const balance=Number(document.getElementById("balance").value);
-  const risk=Number(document.getElementById("risk").value);
-  const entry=Number(document.getElementById("entry").value);
-  const stop=Number(document.getElementById("stop").value);
-  const targetText=document.getElementById("target").value.trim();
-  const target=Number(targetText);
-  const out=document.getElementById("riskResult");
+  const account = Number(document.getElementById("account").value);
+  const riskPct = Number(document.getElementById("risk").value);
+  const entry = Number(document.getElementById("entry").value);
+  const stop = Number(document.getElementById("stop").value);
+  const target = Number(document.getElementById("target").value);
+  const result = document.getElementById("riskResult");
 
-  if(!(balance>0) || !(risk>0) || risk>1){
-    out.textContent="请填写有效账户资金，并将单笔风险设为 0 至 1% 之间。";
-    return;
-  }
-  if(!(entry>0) || !(stop>0) || entry===stop){
-    out.textContent="请填写有效入场价和止损价，且两者不能相同。";
+  if(!(account > 0) || !(riskPct > 0) || !(entry > 0) ||
+     !(stop > 0) || !(target > 0)){
+    result.textContent = "请填写有效的账户资金、风险比例、入场、止损和止盈价格。";
     return;
   }
 
-  const riskMoney=balance*risk/100;
-  const distance=Math.abs(entry-stop);
-  let result="账户资金：$"+fmt(balance)+
-    "\n单笔风险上限："+risk+"%"+
-    "\n最大计划亏损：$"+fmt(riskMoney)+
-    "\n入场与止损距离："+fmt(distance);
+  const stopDistance = Math.abs(entry - stop);
+  const targetDistance = Math.abs(target - entry);
 
-  if(targetText && target>0){
-    const reward=Math.abs(target-entry);
-    const correctDirection=(entry>stop && target>entry)||(entry<stop && target<entry);
-    const rr=reward/distance;
-    result+="\n目标价格："+fmt(target)+
-      "\n预估盈亏比：1:"+fmt(rr)+
-      "\n方向检查："+(correctDirection?"止盈方向合理":"请检查止盈是否位于预期盈利方向");
-  }else{
-    result+="\n尚未填写止盈价，无法计算盈亏比。";
+  if(stopDistance === 0){
+    result.textContent = "止损价格不能与入场价格相同。";
+    return;
   }
 
-  result+="\n\n注意：这是价格距离和风险金额计算，不是手数计算。实际亏损还可能受点差、手续费和滑点影响。";
-  out.textContent=result;
+  const rewardRisk = targetDistance / stopDistance;
+  const maxLoss = account * riskPct / 100;
+  const potentialReward = maxLoss * rewardRisk;
+  const correctSide = (entry > stop && target > entry) ||
+                      (entry < stop && target < entry);
+
+  result.textContent =
+    "计划最大亏损金额：" + maxLoss.toFixed(2) + " USD\n" +
+    "入场至止损距离：" + stopDistance + "\n" +
+    "入场至止盈距离：" + targetDistance + "\n" +
+    "盈亏比：1 : " + rewardRisk.toFixed(2) + "\n" +
+    "按该盈亏比估算的潜在盈利：" + potentialReward.toFixed(2) + " USD\n" +
+    (correctSide ? "" : "提醒：请检查止损和止盈是否符合你的交易方向。") +
+    "\n注意：实际金额风险还取决于手数、合约规格、点值、点差和交易费用。";
 }
 </script>
 </body>
