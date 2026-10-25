@@ -1,209 +1,69 @@
 
-<!DOCTYPE html>
-<html lang="zh-CN">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>AI Trading Assistant</title>
-<style>
-*{box-sizing:border-box}
-body{margin:0;background:#0b1120;color:#e5edf8;font-family:Arial,sans-serif}
-header{padding:22px 16px;background:#121d32;border-bottom:1px solid #293852}
-h1{margin:0;font-size:23px;color:#63d6b4}
-header p{color:#a8b8ce;font-size:13px}
-main{max-width:760px;margin:auto;padding:16px}
-.card{background:#121d32;border:1px solid #293852;border-radius:14px;padding:17px;margin-bottom:15px}
-h2{font-size:17px;margin:0 0 16px}
-label{display:block;color:#afc0d5;font-size:13px;margin:12px 0 6px}
-input,select{width:100%;padding:12px;background:#0b1120;border:1px solid #354764;border-radius:8px;color:#fff;font-size:15px}
-button{width:100%;padding:13px;border:0;border-radius:9px;background:#32c99b;color:#06251c;font-weight:bold;font-size:15px;margin-top:12px}
-button.secondary{background:#263750;color:#e5edf8}
-.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-.price{font-size:28px;font-weight:bold;color:#63d6b4;margin:10px 0}
-.small{font-size:12px;color:#9eb0c8;line-height:1.6}
-.result{white-space:pre-wrap;line-height:1.8;font-size:14px;overflow-wrap:anywhere}
-.status{font-size:13px;color:#9eb0c8}
-.good{color:#63d6b4}
-.warn{color:#ffcb78}
-@media(max-width:480px){.grid{grid-template-columns:1fr}main{padding:10px}}
-</style>
-</head>
-<body>
-<header>
-<h1>AI Trading Assistant</h1>
-<p>外汇与黄金行情 · Gemini AI 分析 · 风险管理</p>
-</header>
-<main>
-<section class="card">
-<h2>实时行情</h2>
-<label for="symbol">交易品种</label>
-<select id="symbol">
-<option value="EUR/USD">EUR/USD</option>
-<option value="USD/JPY">USD/JPY</option>
-<option value="XAU/USD">XAU/USD</option>
-</select>
-<div class="price" id="priceDisplay">等待获取行情</div>
-<div class="status" id="marketStatus">尚未获取价格</div>
-<button id="fetchBtn" onclick="loadPrice()">获取最新价格</button>
-<p class="small">行情来源：Twelve Data。可用品种和请求额度取决于数据服务商权限。</p>
-</section>
-
-<section class="card">
-<h2>Gemini AI 交易分析</h2>
-<label for="trend">你观察到的市场方向</label>
-<select id="trend">
-<option value="上涨趋势">上涨趋势</option>
-<option value="下跌趋势">下跌趋势</option>
-<option value="横盘震荡">横盘震荡</option>
-<option value="不确定">不确定</option>
-</select>
-<label for="structure">市场结构</label>
-<select id="structure">
-<option value="趋势回调">趋势回调</option>
-<option value="突破关键位">突破关键位</option>
-<option value="区间内运行">区间内运行</option>
-<option value="结构不清晰">结构不清晰</option>
-</select>
-<button id="analyzeBtn" onclick="analyze()">调用 Gemini AI 分析</button>
-<div id="analysisResult" class="result" style="margin-top:14px">请先获取行情，再生成分析。</div>
-<p class="small">AI 分析仅供参考。当前接口只收到价格和你选择的趋势、结构，未自动读取 K 线或新闻。不会自动下单。</p>
-</section>
-
-<section class="card">
-<h2>风险计算器</h2>
-<div class="grid">
-<div><label for="account">账户资金（USD）</label><input id="account" type="number" value="1000" min="0"></div>
-<div><label for="risk">单笔风险（%）</label><input id="risk" type="number" value="1" min="0.1" max="100" step="0.1"></div>
-<div><label for="entry">入场价格</label><input id="entry" type="number" step="any" placeholder="入场价格"></div>
-<div><label for="stop">止损价格</label><input id="stop" type="number" step="any" placeholder="止损价格"></div>
-<div><label for="target">止盈价格</label><input id="target" type="number" step="any" placeholder="止盈价格"></div>
-</div>
-<button onclick="calculateRisk()">计算风险与盈亏比</button>
-<div id="riskResult" class="result" style="margin-top:14px">填写价格后计算。</div>
-<p class="small">本工具估算风险金额和盈亏比，不等同于实际手数计算。点值、合约规格和费用取决于经纪商。</p>
-</section>
-
-<section class="card">
-<h2>安全说明</h2>
-<p class="small">此网站不连接实盘自动下单。AI 输出可能有误，不保证收益。下单前请自行核对价格、市场结构和风险。</p>
-</section>
-</main>
-
-<script>
-let latestPrice = null;
-
-async function loadPrice(){
-  const symbol = document.getElementById("symbol").value;
-  const status = document.getElementById("marketStatus");
-  const display = document.getElementById("priceDisplay");
-  const btn = document.getElementById("fetchBtn");
-
-  btn.disabled = true;
-  btn.textContent = "正在获取...";
-  status.textContent = "正在连接行情接口...";
-
-  try{
-    const response = await fetch("/api/market?symbol=" + encodeURIComponent(symbol));
-    const data = await response.json();
-
-    if(!response.ok || typeof data.price !== "number"){
-      throw new Error(data.error || "行情暂时不可用");
-    }
-
-    latestPrice = data.price;
-    display.textContent = data.price.toLocaleString("en-US", {maximumFractionDigits: 5});
-    document.getElementById("entry").value = data.price;
-    status.textContent = "来源：" + data.source + " · 更新时间：" +
-      new Date(data.timestamp).toLocaleString();
-    status.className = "status good";
-  }catch(error){
-    status.textContent = "获取失败：" + error.message;
-    status.className = "status warn";
-  }finally{
-    btn.disabled = false;
-    btn.textContent = "获取最新价格";
-  }
-}
-
-async function analyze(){
-  const btn = document.getElementById("analyzeBtn");
-  const result = document.getElementById("analysisResult");
-  const symbol = document.getElementById("symbol").value;
-
-  if(latestPrice === null){
-    result.textContent = "请先点击“获取最新价格”。";
-    return;
-  }
-
-  btn.disabled = true;
-  btn.textContent = "Gemini 正在分析...";
-  result.textContent = "正在请求 AI 分析，请稍候...";
-
-  try{
-    const response = await fetch("/api/analyze", {
-      method: "POST",
-      headers: {"Content-Type": "application/json"},
-      body: JSON.stringify({
-        symbol,
-        price: latestPrice,
-        trend: document.getElementById("trend").value,
-        structure: document.getElementById("structure").value
-      })
+export default async function handler(req, res) {
+  if (req.method !== "GET") {
+    return res.status(405).json({
+      error: "Method not allowed"
     });
+  }
 
+  const allowedSymbols = [
+    "EUR/USD",
+    "GBP/USD",
+    "USD/JPY",
+    "XAU/USD"
+  ];
+
+  const symbol = String(
+    req.query.symbol || "EUR/USD"
+  ).toUpperCase();
+
+  if (!allowedSymbols.includes(symbol)) {
+    return res.status(400).json({
+      error: "Unsupported symbol"
+    });
+  }
+
+  const apiKey = process.env.TWELVE_DATA_API_KEY;
+
+  if (!apiKey) {
+    return res.status(500).json({
+      error: "Market data API key is not configured"
+    });
+  }
+
+  try {
+    const url = new URL(
+      "https://api.twelvedata.com/price"
+    );
+
+    url.searchParams.set("symbol", symbol);
+    url.searchParams.set("apikey", apiKey);
+
+    const response = await fetch(url.toString());
     const data = await response.json();
 
-    if(!response.ok){
-      throw new Error(data.error || "AI 分析请求失败");
+    if (
+      !response.ok ||
+      data.status === "error" ||
+      data.price === undefined ||
+      !Number.isFinite(Number(data.price))
+    ) {
+      return res.status(502).json({
+        error: data.message || "Unable to retrieve market price"
+      });
     }
 
-    result.textContent = data.analysis;
-  }catch(error){
-    result.textContent = "分析失败：" + error.message +
-      "\n请确认 api/analyze.js 已提交、Vercel 部署成功，且 GEMINI_API_KEY 已配置。";
-  }finally{
-    btn.disabled = false;
-    btn.textContent = "调用 Gemini AI 分析";
+    return res.status(200).json({
+      symbol,
+      price: Number(data.price),
+      source: "Twelve Data",
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    console.error("Market API error:", error);
+
+    return res.status(502).json({
+      error: "Market data request failed"
+    });
   }
 }
-
-function calculateRisk(){
-  const account = Number(document.getElementById("account").value);
-  const riskPct = Number(document.getElementById("risk").value);
-  const entry = Number(document.getElementById("entry").value);
-  const stop = Number(document.getElementById("stop").value);
-  const target = Number(document.getElementById("target").value);
-  const result = document.getElementById("riskResult");
-
-  if(!(account > 0) || !(riskPct > 0) || !(entry > 0) ||
-     !(stop > 0) || !(target > 0)){
-    result.textContent = "请填写有效的账户资金、风险比例、入场、止损和止盈价格。";
-    return;
-  }
-
-  const stopDistance = Math.abs(entry - stop);
-  const targetDistance = Math.abs(target - entry);
-
-  if(stopDistance === 0){
-    result.textContent = "止损价格不能与入场价格相同。";
-    return;
-  }
-
-  const rewardRisk = targetDistance / stopDistance;
-  const maxLoss = account * riskPct / 100;
-  const potentialReward = maxLoss * rewardRisk;
-  const correctSide = (entry > stop && target > entry) ||
-                      (entry < stop && target < entry);
-
-  result.textContent =
-    "计划最大亏损金额：" + maxLoss.toFixed(2) + " USD\n" +
-    "入场至止损距离：" + stopDistance + "\n" +
-    "入场至止盈距离：" + targetDistance + "\n" +
-    "盈亏比：1 : " + rewardRisk.toFixed(2) + "\n" +
-    "按该盈亏比估算的潜在盈利：" + potentialReward.toFixed(2) + " USD\n" +
-    (correctSide ? "" : "提醒：请检查止损和止盈是否符合交易方向。") +
-    "\n实际风险还取决于手数、点值、合约规格、点差和交易费用。";
-}
-</script>
-</body>
-</html>
