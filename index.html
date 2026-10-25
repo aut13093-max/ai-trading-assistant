@@ -3,220 +3,177 @@
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width,initial-scale=1">
 <title>AI Trading Assistant</title>
 <style>
 *{box-sizing:border-box}
 body{margin:0;background:#0b1120;color:#e5edf8;font-family:Arial,sans-serif}
 header{padding:22px 16px;background:#121d32;border-bottom:1px solid #293852}
 h1{margin:0;font-size:23px;color:#63d6b4}
-header p{color:#a8b8ce;font-size:13px}
+header p,.small,.status{color:#a8b8ce;font-size:13px;line-height:1.6}
 main{max-width:760px;margin:auto;padding:16px}
 .card{background:#121d32;border:1px solid #293852;border-radius:14px;padding:17px;margin-bottom:15px}
 h2{font-size:17px;margin:0 0 16px}
 label{display:block;color:#afc0d5;font-size:13px;margin:12px 0 6px}
-input,select{width:100%;padding:12px;background:#0b1120;border:1px solid #354764;border-radius:8px;color:#fff;font-size:15px}
+input,select{width:100%;padding:12px;background:#0b1120;border:1px solid #354764;border-radius:8px;color:white;font-size:15px}
 button{width:100%;padding:13px;border:0;border-radius:9px;background:#32c99b;color:#06251c;font-weight:bold;font-size:15px;margin-top:12px}
-button.secondary{background:#263750;color:#e5edf8}
+button:disabled{opacity:.6}
 .grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 .price{font-size:28px;font-weight:bold;color:#63d6b4;margin:10px 0}
-.small{font-size:12px;color:#9eb0c8;line-height:1.6}
-.result{white-space:pre-wrap;line-height:1.8;font-size:14px}
-.status{font-size:13px;color:#9eb0c8}
-.good{color:#63d6b4}
-.warn{color:#ffcb78}
+.result{white-space:pre-wrap;line-height:1.8;font-size:14px;overflow-wrap:anywhere}
+.good{color:#63d6b4}.warn{color:#ffcb78}
 @media(max-width:480px){.grid{grid-template-columns:1fr}main{padding:10px}}
 </style>
 </head>
 <body>
 <header>
 <h1>AI Trading Assistant</h1>
-<p>外汇与黄金行情 · 规则分析 · 风险管理</p>
+<p>外汇与黄金行情 · Gemini AI 分析 · 风险管理</p>
 </header>
 <main>
 <section class="card">
 <h2>实时行情</h2>
 <label for="symbol">交易品种</label>
 <select id="symbol">
-<option value="EUR/USD">EUR/USD</option>
-<option value="USD/JPY">USD/JPY</option>
-<option value="XAU/USD">XAU/USD</option>
+<option>EUR/USD</option>
+<option>USD/JPY</option>
+<option>XAU/USD</option>
 </select>
 <div class="price" id="priceDisplay">等待获取行情</div>
 <div class="status" id="marketStatus">尚未获取价格</div>
 <button id="fetchBtn" onclick="loadPrice()">获取最新价格</button>
-<p class="small">行情由你已配置的 Twelve Data API 提供。数据是否可用取决于服务商权限与额度。</p>
+<p class="small">行情来源：Twelve Data。数据可用性取决于服务商权限与额度。</p>
 </section>
 
 <section class="card">
-<h2>交易分析</h2>
-<label for="trend">你观察到的市场方向</label>
+<h2>Gemini AI 交易分析</h2>
+<label for="trend">市场方向</label>
 <select id="trend">
-<option value="up">上涨趋势</option>
-<option value="down">下跌趋势</option>
-<option value="sideways">横盘震荡</option>
+<option>上涨趋势</option>
+<option>下跌趋势</option>
+<option>横盘震荡</option>
+<option>不确定</option>
 </select>
 <label for="structure">市场结构</label>
 <select id="structure">
-<option value="pullback">趋势回调</option>
-<option value="breakout">突破关键位</option>
-<option value="range">区间内运行</option>
-<option value="unclear">结构不清晰</option>
+<option>趋势回调</option>
+<option>突破关键位</option>
+<option>区间内运行</option>
+<option>结构不清晰</option>
 </select>
-<button onclick="analyze()">生成规则分析</button>
-<div id="analysisResult" class="result" style="margin-top:14px">选择市场方向与结构，然后生成分析。</div>
-<p class="small">此功能是规则分析，不是已连接的 AI 模型，也不保证交易结果。</p>
+<button id="analyzeBtn" onclick="analyze()">调用 Gemini AI 分析</button>
+<div id="analysisResult" class="result" style="margin-top:14px">请先获取行情，再进行 AI 分析。</div>
+<p class="small">分析只使用当前价格及你选择的方向和结构，不会自动读取K线或新闻，也不会自动下单。AI分析不保证盈利。</p>
 </section>
 
 <section class="card">
 <h2>风险计算器</h2>
 <div class="grid">
-<div>
-<label for="account">账户资金（USD）</label>
-<input id="account" type="number" value="1000" min="0">
-</div>
-<div>
-<label for="risk">单笔风险（%）</label>
-<input id="risk" type="number" value="1" min="0.1" max="100" step="0.1">
-</div>
-<div>
-<label for="entry">入场价格</label>
-<input id="entry" type="number" step="any" placeholder="输入入场价格">
-</div>
-<div>
-<label for="stop">止损价格</label>
-<input id="stop" type="number" step="any" placeholder="输入止损价格">
-</div>
-<div>
-<label for="target">止盈价格</label>
-<input id="target" type="number" step="any" placeholder="输入止盈价格">
-</div>
+<div><label for="account">账户资金（USD）</label><input id="account" type="number" value="1000" min="0"></div>
+<div><label for="risk">单笔风险（%）</label><input id="risk" type="number" value="1" min="0.1" max="100" step="0.1"></div>
+<div><label for="entry">入场价格</label><input id="entry" type="number" step="any" placeholder="入场价格"></div>
+<div><label for="stop">止损价格</label><input id="stop" type="number" step="any" placeholder="止损价格"></div>
+<div><label for="target">止盈价格</label><input id="target" type="number" step="any" placeholder="止盈价格"></div>
 </div>
 <button onclick="calculateRisk()">计算风险与盈亏比</button>
 <div id="riskResult" class="result" style="margin-top:14px">填写价格后计算。</div>
-<p class="small">此计算器估算金额风险和盈亏比，不会自动计算所有品种的实际手数。外汇与黄金合约规格因经纪商而异。</p>
-</section>
-
-<section class="card">
-<h2>安全说明</h2>
-<p class="small">本网站目前不连接实盘自动下单。行情接口成功不代表分析功能已接入真实 AI。交易前请核对经纪商报价、点差、合约规格与风险。</p>
+<p class="small">估算风险金额和盈亏比，不等同于实际手数计算。点值和合约规格取决于经纪商。</p>
 </section>
 </main>
+
 <script>
-let latestPrice = null;
+let latestPrice=null;
 
 async function loadPrice(){
-  const symbol = document.getElementById("symbol").value;
-  const status = document.getElementById("marketStatus");
-  const display = document.getElementById("priceDisplay");
-  const btn = document.getElementById("fetchBtn");
-
-  btn.disabled = true;
-  btn.textContent = "正在获取...";
-  status.textContent = "正在连接行情接口...";
+  const btn=document.getElementById("fetchBtn");
+  const status=document.getElementById("marketStatus");
+  const display=document.getElementById("priceDisplay");
+  btn.disabled=true;
+  btn.textContent="正在获取...";
+  status.textContent="正在连接行情接口...";
 
   try{
-    const response = await fetch("/api/market?symbol=" + encodeURIComponent(symbol));
-    const data = await response.json();
-
-    if(!response.ok || typeof data.price !== "number"){
-      throw new Error(data.error || "行情暂时不可用");
-    }
-
-    latestPrice = data.price;
-    display.textContent = data.price.toLocaleString("en-US", {
-      maximumFractionDigits: 5
-    });
-    document.getElementById("entry").value = data.price;
-    status.textContent = "来源：" + data.source + " · 更新时间：" +
-      new Date(data.timestamp).toLocaleString();
-    status.className = "status good";
-  }catch(error){
-    status.textContent = "获取失败：" + error.message;
-    status.className = "status warn";
+    const response=await fetch("/api/market?symbol="+encodeURIComponent(document.getElementById("symbol").value));
+    const data=await response.json();
+    if(!response.ok||typeof data.price!=="number") throw new Error(data.error||"行情暂时不可用");
+    latestPrice=data.price;
+    display.textContent=data.price.toLocaleString("en-US",{maximumFractionDigits:5});
+    document.getElementById("entry").value=data.price;
+    status.textContent="来源："+data.source+" · 更新时间："+new Date(data.timestamp).toLocaleString();
+    status.className="status good";
+  }catch(e){
+    status.textContent="获取失败："+e.message;
+    status.className="status warn";
   }finally{
-    btn.disabled = false;
-    btn.textContent = "获取最新价格";
+    btn.disabled=false;
+    btn.textContent="获取最新价格";
   }
 }
 
-function analyze(){
-  const trend = document.getElementById("trend").value;
-  const structure = document.getElementById("structure").value;
-  const symbol = document.getElementById("symbol").value;
-  const priceText = latestPrice === null ? "尚未获取实时价格" : latestPrice;
-  let direction = "";
-  let plan = "";
-
-  if(trend === "up"){
-    direction = "当前选择：上涨趋势";
-    plan = structure === "pullback"
-      ? "观察回调是否在支撑区域止跌，并等待确认信号。"
-      : structure === "breakout"
-      ? "确认突破是否有效，避免只凭单根 K 线追价。"
-      : structure === "range"
-      ? "趋势与横盘环境可能冲突，等待价格选择方向。"
-      : "结构不清晰，暂时观望，等待更明确的信号。";
-  }else if(trend === "down"){
-    direction = "当前选择：下跌趋势";
-    plan = structure === "pullback"
-      ? "观察反弹至阻力区域后是否出现转弱确认。"
-      : structure === "breakout"
-      ? "确认向下突破是否有效，警惕假突破。"
-      : structure === "range"
-      ? "下跌趋势与横盘环境可能冲突，等待方向确认。"
-      : "结构不清晰，暂时观望，等待更明确的信号。";
-  }else{
-    direction = "当前选择：横盘震荡";
-    plan = structure === "range"
-      ? "观察区间上下沿反应，避免在区间中部追单。"
-      : "方向与横盘状态不完全一致，等待突破并确认。";
+async function analyze(){
+  const btn=document.getElementById("analyzeBtn");
+  const result=document.getElementById("analysisResult");
+  if(latestPrice===null){
+    result.textContent="请先点击“获取最新价格”。";
+    return;
   }
-
-  document.getElementById("analysisResult").textContent =
-    "品种：" + symbol + "\n" +
-    "最新获取价格：" + priceText + "\n" +
-    direction + "\n\n" +
-    "规则提示：\n" + plan + "\n\n" +
-    "风险控制：先确定止损位置，再按账户风险计算仓位。单笔风险应符合你的交易计划。";
+  btn.disabled=true;
+  btn.textContent="Gemini 正在分析...";
+  result.textContent="正在请求 AI，请稍候...";
+  try{
+    const response=await fetch("/api/analyze",{
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({
+        symbol:document.getElementById("symbol").value,
+        price:latestPrice,
+        trend:document.getElementById("trend").value,
+        structure:document.getElementById("structure").value
+      })
+    });
+    const data=await response.json();
+    if(!response.ok) throw new Error(data.error||"AI 请求失败");
+    if(!data.analysis) throw new Error("AI 没有返回分析内容");
+    result.textContent=data.analysis;
+  }catch(e){
+    result.textContent="AI 分析失败："+e.message+
+      "\n请确认 api/analyze.js 已保存、Vercel 部署成功，且 GEMINI_API_KEY 已配置。";
+  }finally{
+    btn.disabled=false;
+    btn.textContent="调用 Gemini AI 分析";
+  }
 }
 
 function calculateRisk(){
-  const account = Number(document.getElementById("account").value);
-  const riskPct = Number(document.getElementById("risk").value);
-  const entry = Number(document.getElementById("entry").value);
-  const stop = Number(document.getElementById("stop").value);
-  const target = Number(document.getElementById("target").value);
-  const result = document.getElementById("riskResult");
+  const account=Number(document.getElementById("account").value);
+  const riskPct=Number(document.getElementById("risk").value);
+  const entry=Number(document.getElementById("entry").value);
+  const stop=Number(document.getElementById("stop").value);
+  const target=Number(document.getElementById("target").value);
+  const result=document.getElementById("riskResult");
 
-  if(!(account > 0) || !(riskPct > 0) || !(entry > 0) ||
-     !(stop > 0) || !(target > 0)){
-    result.textContent = "请填写有效的账户资金、风险比例、入场、止损和止盈价格。";
+  if(!(account>0)||!(riskPct>0)||!(entry>0)||!(stop>0)||!(target>0)){
+    result.textContent="请填写有效的账户资金、风险比例、入场、止损和止盈价格。";
     return;
   }
-
-  const stopDistance = Math.abs(entry - stop);
-  const targetDistance = Math.abs(target - entry);
-
-  if(stopDistance === 0){
-    result.textContent = "止损价格不能与入场价格相同。";
+  if(entry===stop){
+    result.textContent="止损价格不能与入场价格相同。";
     return;
   }
+  const riskDistance=Math.abs(entry-stop);
+  const rewardDistance=Math.abs(target-entry);
+  const rr=rewardDistance/riskDistance;
+  const maxLoss=account*riskPct/100;
+  const correctSide=(entry>stop&&target>entry)||(entry<stop&&target<entry);
 
-  const rewardRisk = targetDistance / stopDistance;
-  const maxLoss = account * riskPct / 100;
-  const potentialReward = maxLoss * rewardRisk;
-  const correctSide = (entry > stop && target > entry) ||
-                      (entry < stop && target < entry);
-
-  result.textContent =
-    "计划最大亏损金额：" + maxLoss.toFixed(2) + " USD\n" +
-    "入场至止损距离：" + stopDistance + "\n" +
-    "入场至止盈距离：" + targetDistance + "\n" +
-    "盈亏比：1 : " + rewardRisk.toFixed(2) + "\n" +
-    "按该盈亏比估算的潜在盈利：" + potentialReward.toFixed(2) + " USD\n" +
-    (correctSide ? "" : "提醒：请检查止损和止盈是否符合你的交易方向。") +
-    "\n注意：实际金额风险还取决于手数、合约规格、点值、点差和交易费用。";
+  result.textContent=
+    "计划最大亏损金额："+maxLoss.toFixed(2)+" USD\n"+
+    "入场至止损距离："+riskDistance+"\n"+
+    "入场至止盈距离："+rewardDistance+"\n"+
+    "盈亏比：1 : "+rr.toFixed(2)+"\n"+
+    "按该盈亏比估算的潜在盈利："+(maxLoss*rr).toFixed(2)+" USD\n"+
+    (correctSide?"":"提醒：请检查止损和止盈是否符合交易方向。")+
+    "\n实际风险还取决于手数、点值、点差和交易费用。";
 }
 </script>
 </body>
